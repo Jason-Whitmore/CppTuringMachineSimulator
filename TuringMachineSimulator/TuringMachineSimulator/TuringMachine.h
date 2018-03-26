@@ -1,11 +1,12 @@
 #pragma once
 #include <vector>
 #include "Instruction.h"
+#include <iostream>
 class TuringMachine {
 	public:
 	TuringMachine();
 	~TuringMachine();
-
+	
 
 	Instruction findInstruction(std::string readChar);
 
@@ -36,6 +37,10 @@ class TuringMachine {
 
 	void setStartStates(unsigned long long s);
 	unsigned long long getStartState();
+
+	void performTestCases(std::vector<std::string> input, std::vector<bool> expectedResult);
+
+	void printOutActiveTape();
 
 	private:
 

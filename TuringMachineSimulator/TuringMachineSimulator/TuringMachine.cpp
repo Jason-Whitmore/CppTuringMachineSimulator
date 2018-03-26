@@ -21,13 +21,12 @@ TuringMachine::~TuringMachine() {
 Instruction TuringMachine::findInstruction(std::string readChar) {
 	//linear search. not pretty, but it works
 
-	for (unsigned long long i = 0; i < transitionTable.size(); i++) {
+	for (int i = 0; i < transitionTable.size(); i++) {
 		if (currentState == transitionTable[i].getStartState() && readChar == transitionTable[i].getReadCharacter()) {
 			return transitionTable[i];
 		}
 	}
-
-	Instruction();
+	return Instruction();
 }
 
 bool TuringMachine::executeStep() {
@@ -45,7 +44,6 @@ bool TuringMachine::executeStep() {
 	tape[readHeadLocation] = ins.getWriteCharacter();
 
 	//moving logic
-
 	//make room at left
 	if (readHeadLocation == 0 && (ins.getReadHeadMovement() == "l" || ins.getReadHeadMovement() == "L")) {
 		expandTapeLeft();
@@ -55,7 +53,7 @@ bool TuringMachine::executeStep() {
 		expandTapeRight();
 		readHeadLocation++;
 		//move head left
-	} else if ((ins.getReadHeadMovement() == "l" || ins.getReadHeadMovement() == "L")) {
+	} else if (ins.getReadHeadMovement() == "l" || ins.getReadHeadMovement() == "L") {
 		readHeadLocation--;
 	} else if (ins.getReadHeadMovement() == "r" || ins.getReadHeadMovement() == "R") {
 		//move head right
@@ -63,20 +61,29 @@ bool TuringMachine::executeStep() {
 	} else {
 		//stay
 	}
-
-
 }
 
 bool TuringMachine::executeMachine(std::string input) {
-
-
+	//make sure tape is clear from previous runs of the machine
+	tape.clear();
+	readHeadLocation = 0;
+	currentState = startState;
 	//place the string on the tape
+
+	if (input.size() == 0) {
+		tape.push_back("");
+	}
+
 	for (int i = 0; i < input.length(); i++) {
 		tape.push_back(input.substr(i, 1));
 	}
 
+	int numberOfSteps = 0;
+	std::cout << "Input: " << input << std::endl;
+	printOutActiveTape();
 	while (executeStep()) {
-
+		numberOfSteps++;
+		printOutActiveTape();
 	}
 
 	return isInAcceptState();
@@ -144,30 +151,97 @@ unsigned long long TuringMachine::getStartState() {
 	return startState;
 }
 
+void TuringMachine::performTestCases(std::vector<std::string> input, std::vector<bool> expectedResult) {
+	int failures = 0;
+
+	for (int i = 0; i < input.size(); i++) {
+		if (expectedResult[i] != executeMachine(input[i])) {
+			std::cout << "Failure on string: " << input[i] << ", expected return: " << expectedResult[i] << std::endl;
+			failures++;
+		}
+	}
+
+	std::cout << "Test cases complete: " << failures << " failures" << std::endl;
+}
+
+void TuringMachine::printOutActiveTape() {
+
+	std::cout << "Tape Reads: " << std::endl;
+
+	for (int i = 0; i < tape.size(); i++) {
+		if (tape[i] == "") {
+			std::cout << " (BLANK), ";
+		} else {
+			std::cout << " (" << tape[i] << "), ";
+		}
+	}
+
+	std::cout << std::endl;
+}
+
 
 int main() {
 
-	TuringMachine bb = TuringMachine();
+	TuringMachine ep = TuringMachine();
+						//start, end, read, write, movement
+	ep.addInstruction(Instruction(0, 1,"a","X","r"));
+	ep.addInstruction(Instruction(1, 1, "a", "a", "r"));
+	ep.addInstruction(Instruction(1, 1, "b", "b", "r"));
+	ep.addInstruction(Instruction(1, 3, "", "", "l"));
+	ep.addInstruction(Instruction(1, 3, "X", "X", "l"));
+	ep.addInstruction(Instruction(3, 5, "a", "X", "l"));
+	ep.addInstruction(Instruction(5, 5, "a", "a", "l"));
 
-	bb.addInstruction(Instruction(0, 1,"","1","r"));
-	bb.addInstruction(Instruction(0, 1, "1", "1", "l"));
-	bb.addInstruction(Instruction(1, 0, "", "1", "l"));
-	bb.addInstruction(Instruction(1, 2, "1", "1", "l"));
+	//bottom half
 
+	ep.addInstruction(Instruction(0, 2, "b", "X", "r"));
+	ep.addInstruction(Instruction(2, 2, "a", "a", "r"));
+	ep.addInstruction(Instruction(2, 2, "b", "b", "r"));
+	ep.addInstruction(Instruction(2, 4, "", "", "l"));
+	ep.addInstruction(Instruction(2, 4, "X", "X", "l"));
+	ep.addInstruction(Instruction(4, 5, "b", "X", "l"));
+	ep.addInstruction(Instruction(5, 5, "b", "b", "l"));
 
-	std::vector<unsigned long long> states = std::vector<unsigned long long>();
+	ep.addInstruction(Instruction(5, 0, "X", "X", "r"));
+
+	ep.addInstruction(Instruction(0, 6, "X", "X", "s"));
+
 	std::vector<unsigned long long> aStates = std::vector<unsigned long long>();
 
-	states.push_back(0);
-	states.push_back(1);
-	states.push_back(2);
-	
-	aStates.push_back(2);
+	ep.setStartStates(0);
+	aStates.push_back(6);
 
-	bb.setStates(states);
-	bb.setAcceptStates(aStates);
+	std::vector<std::string> testStrings = std::vector<std::string>();
+	std::vector<bool> testResults = std::vector<bool>();
 
-	bb.executeMachine("");
+	testStrings.push_back("");
+	testResults.push_back(false);
+
+	testStrings.push_back("ab");
+	testResults.push_back(false);
+
+	testStrings.push_back("ba");
+	testResults.push_back(false);
+
+	testStrings.push_back("aba");
+	testResults.push_back(false);
+
+	testStrings.push_back("aabb");
+	testResults.push_back(false);
+
+	testStrings.push_back("aaabbb");
+	testResults.push_back(false);
+
+	testStrings.push_back("aabbaa");
+	testResults.push_back(true);
+
+	testStrings.push_back("abba");
+	testResults.push_back(true);
+
+
+	ep.setAcceptStates(aStates);
+
+	ep.performTestCases(testStrings, testResults);
 	
-return 0;
+	return 0;
 }
